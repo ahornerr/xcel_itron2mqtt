@@ -21,34 +21,59 @@ CIPHERS = ('ECDHE')
 
 logger = logging.getLogger(__name__)
 
-# Create an adapter for our request to enable the non-standard cipher
-# From https://lukasa.co.uk/2017/02/Configuring_TLS_With_Requests/
-class CCM8Adapter(HTTPAdapter):
-    """
-    A TransportAdapter that re-enables ECDHE support in Requests.
-    Not really sure how much redundancy is actually required here
-    """
+def make_ctx_for_curl_equiv(cert_path: str, key_path: str) -> ssl.SSLContext:
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+
+    # Match: Options = UnsafeLegacyServerConnect
+    if hasattr(ssl, "OP_LEGACY_SERVER_CONNECT"):
+        ctx.options |= ssl.OP_LEGACY_SERVER_CONNECT
+
+    # Match: CipherString = DEFAULT@SECLEVEL=0, but pin to curl's cipher
+    # TLS 1.2 only, AEAD CCM8 suite; add @SECLEVEL=0 to mirror your OPENSSL_CONF
+    try:
+        ctx.set_ciphers("ECDHE-ECDSA-AES128-CCM8@SECLEVEL=0")
+    except ssl.SSLError as e:
+        # Some Python/OpenSSL builds may not have CCM8; as a fallback, try DEFAULT@SECLEVEL=0
+        ctx.set_ciphers("DEFAULT@SECLEVEL=0")
+
+    # Force TLS 1.2 (that cipher is TLS1.2; TLS1.3 ignores cipher strings)
+    if hasattr(ssl, "TLSVersion"):
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+        ctx.maximum_version = ssl.TLSVersion.TLSv1_2
+
+    # Match: --insecure (no cert validation, no hostname checking)
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+
+    # Load client cert/key (same as curl --cert/--key)
+    ctx.load_cert_chain(certfile=cert_path, keyfile=key_path)
+
+    # Some legacy endpoints dislike HTTP/2 ALPN
+    try:
+        ctx.set_alpn_protocols(["http/1.1"])
+    except Exception:
+        pass
+
+    return ctx
+
+class TLSAdapter(HTTPAdapter):
+    def __init__(self, ssl_context: ssl.SSLContext, *args, **kwargs):
+        self._ssl_context = ssl_context
+        super().__init__(*args, **kwargs)
+
     def init_poolmanager(self, *args, **kwargs):
-        kwargs['ssl_context'] = self.create_ssl_context()
-        return super(CCM8Adapter, self).init_poolmanager(*args, **kwargs)
+        kwargs["ssl_context"] = self._ssl_context
+        return super().init_poolmanager(*args, **kwargs)
 
     def proxy_manager_for(self, *args, **kwargs):
-        kwargs['ssl_context'] = self.create_ssl_context()
-        return super(CCM8Adapter, self).proxy_manager_for(*args, **kwargs)
-
-    def create_ssl_context(self):
-        ssl_version=ssl.PROTOCOL_TLSv1_2
-        context = create_urllib3_context(ssl_version=ssl_version)
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_REQUIRED
-        context.set_ciphers(CIPHERS)
-        return context
+        kwargs.setdefault("ssl_context", self._ssl_context)
+        return super().proxy_manager_for(*args, **kwargs)
 
 class xcelMeter():
 
     def __init__(self, name: str, ip_address: str, port: int, creds: Tuple[str, str]):
         self.name = name
-        self.POLLING_RATE = 5.0
+        self.POLLING_RATE = 1.0
         # Base URL used to query the meter
         self.url = f'https://{ip_address}:{port}'
 
@@ -127,10 +152,9 @@ class xcelMeter():
 
         Returns: request.session
         """
+        ctx = make_ctx_for_curl_equiv(creds[0], creds[1])
         session = requests.Session()
-        session.cert = creds
-        # Mount our adapter to the domain
-        session.mount('https://{ip_address}', CCM8Adapter())
+        session.mount("https://", TLSAdapter(ctx))
 
         return session
 

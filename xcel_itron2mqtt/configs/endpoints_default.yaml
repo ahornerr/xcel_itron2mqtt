@@ -6,7 +6,7 @@
         device_class: power
         unit_of_measurement: W
 - Current Summation Received:
-    url: '/upt/1/mr/2/rs/1/r/1'
+    url: '/upt/1/mr/2/r'
     tags:
       timePeriod:
         - duration:
@@ -18,15 +18,13 @@
             entity_type: sensor
             device_class: timestamp
             value_template: '{{ as_datetime( value ) }}'
-      touTier:
-        entity_type: sensor
       value:
         entity_type: sensor
         device_class: energy
         unit_of_measurement: Wh
         state_class: total
 - Current Summation Delivered:
-    url: '/upt/1/mr/3/rs/1/r/1'
+    url: '/upt/1/mr/3/r'
     tags:
       timePeriod:
         - duration:
@@ -38,11 +36,116 @@
             entity_type: sensor
             device_class: timestamp
             value_template: '{{ as_datetime( value ) }}'
-      touTier:
-        entity_type: sensor
       value:
         entity_type: sensor
         device_class: energy
         unit_of_measurement: Wh
         state_class: total
-          
+- TOU WH Delivered Tier 1:
+    url: '/upt/1/mr/9/rs/1/r/2'
+    tags:
+      timePeriod:
+        - duration:
+            entity_type: sensor
+            device_class: duration
+            value_template: '{{ value }}'
+            unit_of_measurement: s
+        - start: 
+            entity_type: sensor
+            device_class: timestamp
+            value_template: '{{ as_datetime( value ) }}'
+      value:
+        entity_type: sensor
+        device_class: energy
+        unit_of_measurement: Wh
+        state_class: total
+- TOU WH Delivered Tier 2:
+    url: '/upt/1/mr/9/rs/1/r/3'
+    tags:
+      timePeriod:
+        - duration:
+            entity_type: sensor
+            device_class: duration
+            value_template: '{{ value }}'
+            unit_of_measurement: s
+        - start: 
+            entity_type: sensor
+            device_class: timestamp
+            value_template: '{{ as_datetime( value ) }}'
+      value:
+        entity_type: sensor
+        device_class: energy
+        unit_of_measurement: Wh
+        state_class: total
+- TOU WH Delivered Tier 3:
+    url: '/upt/1/mr/9/rs/1/r/4'
+    tags:
+      timePeriod:
+        - duration:
+            entity_type: sensor
+            device_class: duration
+            value_template: '{{ value }}'
+            unit_of_measurement: s
+        - start: 
+            entity_type: sensor
+            device_class: timestamp
+            value_template: '{{ as_datetime( value ) }}'
+      value:
+        entity_type: sensor
+        device_class: energy
+        unit_of_measurement: Wh
+        state_class: total
+- TOU WH Received Tier 1:
+    url: '/upt/1/mr/8/rs/1/r/2'
+    tags:
+      timePeriod:
+        - duration:
+            entity_type: sensor
+            device_class: duration
+            value_template: '{{ value }}'
+            unit_of_measurement: s
+        - start: 
+            entity_type: sensor
+            device_class: timestamp
+            value_template: '{{ as_datetime( value ) }}'
+      value:
+        entity_type: sensor
+        device_class: energy
+        unit_of_measurement: Wh
+        state_class: total
+- TOU WH Received Tier 2:
+    url: '/upt/1/mr/8/rs/1/r/3'
+    tags:
+      timePeriod:
+        - duration:
+            entity_type: sensor
+            device_class: duration
+            value_template: '{{ value }}'
+            unit_of_measurement: s
+        - start: 
+            entity_type: sensor
+            device_class: timestamp
+            value_template: '{{ as_datetime( value ) }}'
+      value:
+        entity_type: sensor
+        device_class: energy
+        unit_of_measurement: Wh
+        state_class: total
+- TOU WH Received Tier 3:
+    url: '/upt/1/mr/8/rs/1/r/4'
+    tags:
+      timePeriod:
+        - duration:
+            entity_type: sensor
+            device_class: duration
+            value_template: '{{ value }}'
+            unit_of_measurement: s
+        - start: 
+            entity_type: sensor
+            device_class: timestamp
+            value_template: '{{ as_datetime( value ) }}'
+      value:
+        entity_type: sensor
+        device_class: energy
+        unit_of_measurement: Wh
+        state_class: total
